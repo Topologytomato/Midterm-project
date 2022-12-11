@@ -272,13 +272,29 @@ M2.2 <- lmer(price ~ room_type + accommodates + bathroom_numbers +
 fixef(M2.2)
 ranef(M2.2)
 
-# figure out the probability of being high price of hawaii
-M2.3 <- glmer(high_price ~ room_type + accommodates + bathroom_numbers +
-                bathroom_type + bedrooms + beds + (1 | neighbourhood) + (rainfall_level - 1 | neighbourhood),
-              data=data_hawaii, family=binomial(link="logit"))
+tmp <- data.frame(fixef(M2.2))
+tmp$variables <- rownames(tmp)
+tmp$positive <- "T"
+tmp[which(tmp$fixef.M2.2. < 0), "positive"] <- "F"
 
-fixef(M2.3)
-ranef(M2.3)
+ggplot(tmp) +
+  aes(x = variables, y = fixef.M2.2., fill = positive) +
+  geom_col() +
+  scale_fill_hue(direction = -1) +
+  coord_flip() +
+  theme_minimal()
+
+tmp <- ranef(M2.2)$neighbourhood
+for(x in 1:9){tmp["sum",x] <- sum(tmp[1:30,x])}
+data_heatmap <- tmp %>%
+  rownames_to_column() %>%
+  gather(colname, value, -rowname)
+
+ggplot(data_heatmap) +
+  aes(x = colname, y = rowname, fill = value) +
+  geom_tile() +
+  scale_fill_distiller(palette = "Oranges", direction = 1) +
+  theme_minimal()
 
 # fit the model with both Hawaii and Boston data
 
@@ -286,5 +302,4 @@ data_clean <- data_clean[complete.cases(data_clean),]
 M3 <- lmer(price ~ room_type + accommodates + bathroom_numbers +
              bathroom_type + bedrooms + beds + (1 | neighbourhood),
            data=data_clean)
-
 
